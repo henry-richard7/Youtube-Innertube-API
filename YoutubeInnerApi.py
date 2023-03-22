@@ -132,8 +132,7 @@ class YoutubeInnerApi:
                 break
         return comments
     
-    @classmethod
-    def get_playlist(cls,playlistID):
+    def get_playlist(self,playlistID):
         playlist_items = []
         url = "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
         playlist_payload = {
@@ -161,7 +160,7 @@ class YoutubeInnerApi:
         
             for playlistItem in items:
                 if playlistItem.get('playlistVideoRenderer'):
-                    video_metrics = cls.get_video_metrics(playlistItem['playlistVideoRenderer']['videoId'])
+                    video_metrics = self.get_video_metrics(playlistItem['playlistVideoRenderer']['videoId'])
                     playlist_items.append({
                     "videoId":playlistItem['playlistVideoRenderer']['videoId'],
                     "thumbnail":playlistItem['playlistVideoRenderer']['thumbnail']['thumbnails'][-1]['url'],
