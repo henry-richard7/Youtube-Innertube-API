@@ -152,6 +152,7 @@ class YoutubeInnerApi:
                     "clientVersion": "2.20230309.08.00",
                 },
             },
+            "params": "wgYCCAA%3D",
         }
 
         comment_response = requests.request(
@@ -181,68 +182,77 @@ class YoutubeInnerApi:
             ).json()
 
             if response.get("onResponseReceivedEndpoints"):
-                comments_endpoint = response["onResponseReceivedEndpoints"][-1]
+                for comments_endpoint in response["onResponseReceivedEndpoints"]:
+                    # comments_endpoint = response["onResponseReceivedEndpoints"][-1]
 
-                if comments_endpoint.get("reloadContinuationItemsCommand"):
-                    contents = comments_endpoint["reloadContinuationItemsCommand"][
-                        "continuationItems"
-                    ]
+                    if comments_endpoint.get("reloadContinuationItemsCommand"):
+                        contents = comments_endpoint["reloadContinuationItemsCommand"][
+                            "continuationItems"
+                        ]
 
-                elif comments_endpoint.get("appendContinuationItemsAction"):
-                    contents = comments_endpoint["appendContinuationItemsAction"][
-                        "continuationItems"
-                    ]
+                    elif comments_endpoint.get("appendContinuationItemsAction"):
+                        contents = comments_endpoint["appendContinuationItemsAction"][
+                            "continuationItems"
+                        ]
 
-                jsonKey = (
-                    "commentThreadRenderer"
-                    if contents[0].get("commentThreadRenderer")
-                    else "commentRenderer"
-                )
-                for comment in contents:
-                    if comment.get(jsonKey):
-                        comment_detail = dict()
+                    jsonKey = (
+                        "commentThreadRenderer"
+                        if contents[0].get("commentThreadRenderer")
+                        else "commentRenderer"
+                    )
+                    for comment in contents:
+                        if comment.get(jsonKey):
+                            comment_detail = dict()
 
-                        comment_detail["commentAuthorName"] = comment[jsonKey][
-                            "comment"
-                        ]["commentRenderer"]["authorText"]["simpleText"]
-                        comment_detail["authorThumbnail"] = comment[jsonKey]["comment"][
-                            "commentRenderer"
-                        ]["authorThumbnail"]["thumbnails"][-1]["url"]
-                        comment_detail["commentText"] = comment[jsonKey]["comment"][
-                            "commentRenderer"
-                        ]["contentText"]["runs"][0]["text"]
-                        comment_detail["commentPublishedTime"] = convert_time_ago(
-                            comment[jsonKey]["comment"]["commentRenderer"][
-                                "publishedTimeText"
-                            ]["runs"][0]["text"]
-                        )
-                        comment_detail["commentPublishedTimeText"] = comment[jsonKey][
-                            "comment"
-                        ]["commentRenderer"]["publishedTimeText"]["runs"][0]["text"]
-                        comment_detail["commentId"] = comment[jsonKey]["comment"][
-                            "commentRenderer"
-                        ]["commentId"]
-                        comment_detail["CommentLikes"] = (
-                            comment[jsonKey]["comment"]["commentRenderer"]["voteCount"][
-                                "simpleText"
+                            comment_detail["commentAuthorName"] = comment[jsonKey][
+                                "comment"
+                            ]["commentRenderer"]["authorText"]["simpleText"]
+                            comment_detail["authorThumbnail"] = comment[jsonKey][
+                                "comment"
+                            ]["commentRenderer"]["authorThumbnail"]["thumbnails"][-1][
+                                "url"
                             ]
-                            if comment[jsonKey]["comment"]["commentRenderer"].get(
-                                "voteCount"
-                            )
-                            else 0
-                        )
-                        comment_detail["CommentReplies"] = (
-                            int(
+                            comment_detail["commentText"] = comment[jsonKey]["comment"][
+                                "commentRenderer"
+                            ]["contentText"]["runs"][0]["text"]
+                            comment_detail["commentPublishedTime"] = convert_time_ago(
                                 comment[jsonKey]["comment"]["commentRenderer"][
+                                    "publishedTimeText"
+                                ]["runs"][0]["text"]
+                            )
+                            comment_detail["commentPublishedTimeText"] = comment[
+                                jsonKey
+                            ]["comment"]["commentRenderer"]["publishedTimeText"][
+                                "runs"
+                            ][
+                                0
+                            ][
+                                "text"
+                            ]
+                            comment_detail["commentId"] = comment[jsonKey]["comment"][
+                                "commentRenderer"
+                            ]["commentId"]
+                            comment_detail["CommentLikes"] = (
+                                comment[jsonKey]["comment"]["commentRenderer"][
+                                    "voteCount"
+                                ]["simpleText"]
+                                if comment[jsonKey]["comment"]["commentRenderer"].get(
+                                    "voteCount"
+                                )
+                                else 0
+                            )
+                            comment_detail["CommentReplies"] = (
+                                int(
+                                    comment[jsonKey]["comment"]["commentRenderer"][
+                                        "replyCount"
+                                    ]
+                                )
+                                if comment[jsonKey]["comment"]["commentRenderer"].get(
                                     "replyCount"
-                                ]
+                                )
+                                else 0
                             )
-                            if comment[jsonKey]["comment"]["commentRenderer"].get(
-                                "replyCount"
-                            )
-                            else 0
-                        )
-                        comments.append(comment_detail)
+                            comments.append(comment_detail)
 
                 if contents[-1].get("continuationItemRenderer"):
                     if contents[-1]["continuationItemRenderer"]["continuationEndpoint"][
@@ -256,7 +266,8 @@ class YoutubeInnerApi:
                 else:
                     break
             else:
-                break
+                print(response)
+                continue
         return comments
 
     def get_playlist(self, playlistID):
